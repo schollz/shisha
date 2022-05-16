@@ -13,7 +13,7 @@ public:
   void setup(float fs);
 
   float process();
-  float process(float frequency);
+  void process(int n, float *buf);
   void setNote(float note) { setFrequency(midi_to_freq(note)); }
   void setFrequency(float frequency) {
     frequency_ = frequency + cents_away(frequency, detune_);
@@ -22,6 +22,10 @@ public:
   void setDetune(float detune) {
     detune_ = detune;
     setFrequency(frequency_);
+  }
+  void setPan(float pan) {
+    // convert [-1,1] to [0,1]
+    pan_ = (pan + 1.0) / 2.0;
   }
   void setPhase(float phase) { phase_ = phase; }
   void setMul(float mul) { mul_ = mul / M_PI; }
@@ -34,4 +38,5 @@ private:
   float frequency_;
   float invSampleRate_;
   float mul_;
+  float pan_;
 };
