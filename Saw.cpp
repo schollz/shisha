@@ -6,6 +6,14 @@ void Saw::setup(float fs) {
   mul_ = 1.f / (float)M_PI;
   invSampleRate_ = 1.0 / fs;
   phase_ = M_PI;
+  Biquad::Settings settings{
+      .fs = fs,
+      .cutoff = 20000.0,
+      .type = Biquad::lowpass,
+      .q = 0.707,
+      .peakGainDb = 2,
+  };
+  lpFilter.setup(settings);
 }
 
 float Saw::process(float frequency) {
@@ -25,6 +33,5 @@ float Saw::process() {
   phase_ += phaseinc_;
   if (phase_ >= M_PI)
     phase_ -= 2.0f * (float)M_PI;
-  // TODO add filter
-  return phase_ * mul_;
+  return lpFilter.process(phase_ * mul_);
 }

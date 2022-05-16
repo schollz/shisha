@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include <cstdlib>
+#include <libraries/Biquad/Biquad.h>
 #include <math.h>
 
 #pragma once
@@ -27,12 +28,14 @@ public:
     // convert [-1,1] to [0,1]
     pan_ = (pan + 1.0) / 2.0;
   }
+  void setLPF(float note) { lpFilter.setFc(midi_to_freq(note)); };
   void setPhase(float phase) { phase_ = phase; }
   void setMul(float mul) { mul_ = mul / M_PI; }
   float getPhase() { return phase_; }
   float getFrequency() { return frequency_; }
 
 private:
+  Biquad lpFilter;
   float detune_; // in cents
   float phase_, phaseinc_;
   float frequency_;
