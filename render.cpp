@@ -1,108 +1,41 @@
 #include "I1P.h"
-#include "SawVoice.h"
-#include "Sequencer.h"
-
 #include <Bela.h>
 #include <chrono>
 #include <cmath>
-#include <libraries/ADSR/ADSR.h>
-#include <libraries/Biquad/Biquad.h>
-#include <monome.h>
 #include <vector>
-
-// monome
-monome_t *monome;
-unsigned int grid[16][16] = {[0 ... 15][0 ... 15] = 0};
-#define MONOME_DEVICE "osc.udp://127.0.0.1:14656/monome"
 
 // profiling
 BelaCpuData gCpuRender = {
     .count = 100,
 };
 
-static const int NUM_VOICES = 6;
-
-std::string gFilename = "drums.wav";
-MonoFilePlayer gPlayer;
-
-SawVoice voice[NUM_VOICES];
+// oscillators
+static const int NUM_VOICES = 4;
+Saw voice[NUM_VOICES];
 I1P *dcBlock[2];
 
-float beats;
-float bpm = 50;
-
 // timing measurements
-bool timedRender = false;
-float timingResult = 0.0;
 std::chrono::steady_clock::time_point timingStart;
 std::chrono::steady_clock::time_point timingEnd;
 
 // sequencer
 Sequencer sequence[6];
 
-Biquad lowshelf, hishelf, bassboost, highpass;
-
-ADSR envelope;
-
-// Processing buffer passed from each effect to the next.
-float *ch0, *ch1, *ch0send, *ch1send, *gMaster_Envelope;
-int gNframes = 0;
-
-// Reverb
-
-Reverb zita[2];
-tflanger *delayline[2];
-tflanger *chorus[2];
-
-uint8_t leds[64];
-
-void handle_press(const monome_event_t *e, void *data) {
-  static const int xoff = 0;
-  static const int yoff = 0;
-  unsigned int x, y;
-
-  x = e->grid.x;
-  y = e->grid.y;
-  rt_printf("\nx=%d,y=%d\n", x, y);
-
-  /* toggle the button */
-  grid[x][y] += 1; //! grid[x][y];
-                   // works
-  // monome_led_set(e->monome, x, y, grid[x][y]);
-  // doesn't work
-  leds[x + y * 8] = (int)grid[x][y];
-  monome_led_level_map(monome, xoff, yoff, leds);
-  // also doesn't work
-  // monome_led_level_set(e->monome, x, y, 15);
-}
+// audio buffer (2 x block)
+float *buf;
 
 static void loop(void *) {
   while (!Bela_stopRequested()) {
     BelaCpuData *data = Bela_cpuMonitoringGet();
     printf("total: %.2f%%, render: %.2f%%\n", data->percentage,
            gCpuRender.percentage);
-    usleep(1000000);
+    usleep(3000000);
   }
-}
-
-static void loop2(void *) { // monome_event_loop(monome);
-  while (!Bela_stopRequested()) {
-    monome_event_handle_next(monome);
-  }
-  monome_close(monome);
 }
 
 bool setup(BelaContext *context, void *userData) {
+  // initialize the random number generator
   srand(time(NULL));
-
-  /* open the monome device */
-  // if (!(monome = monome_open(MONOME_DEVICE, "8000")))
-  if (!(monome = monome_open("/dev/ttyUSB0")))
-    return -1;
-  monome_led_all(monome, 0);
-  /* register our button press callback */
-  monome_register_handler(monome, MONOME_BUTTON_DOWN, handle_press, NULL);
-  Bela_runAuxiliaryTask(loop2);
 
   // enable CPU monitoring for the whole audio thread
   Bela_cpuMonitoringInit(100);
