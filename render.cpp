@@ -27,6 +27,7 @@ float *buf[2], *bufsnd[2];
 static const int NUM_ANALOG_INPUTS = 5;
 float analogInput[NUM_ANALOG_INPUTS];
 I1P* analogInputFilter[NUM_ANALOG_INPUTS];
+int gAudioFramesPerAnalogFrame = 0;
 
 static void loop(void*) {
     while (!Bela_stopRequested()) {
@@ -50,6 +51,9 @@ bool setup(BelaContext* context, void* userData) {
     Bela_runAuxiliaryTask(loop);
 
     // setup analog inputs
+    if (context->analogFrames)
+        gAudioFramesPerAnalogFrame =
+            context->audioFrames / context->analogFrames;
     for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
         analogInputFilter[i] =
             new I1P(1.0 / (context->audioSampleRate / context->audioFrames));
@@ -81,10 +85,15 @@ void render(BelaContext* context, void* userData) {
     // cpu start clock
     Bela_cpuTic(&gCpuRender);
 
-    // read the analog pins
-    for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
-        analogInput[i] =
-            analogInputFilter[i]->process(analogRead(context, 0, i));
+    // process analog pins
+    for (unsigned int n = 0; n < context->audioFrames; n++) {
+        // read analog inputs and update frequency and amplitude
+        if (gAudioFramesPerAnalogFrame && !(n % gAudioFramesPerAnalogFrame)) {
+            for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
+                analogInput[i] = analogInputFilter[i]->process(
+                    analogRead(context, n / gAudioFramesPerAnalogFrame, i));
+            }
+        }
     }
 
     // reset block
@@ -94,6 +103,7 @@ void render(BelaContext* context, void* userData) {
             bufsnd[channel][n] = 0.0;
         }
     }
+
     // process audio
     for (unsigned int i = 0; i < NUM_VOICES; i++) {
         voice[i].process(context->audioFrames, buf);
@@ -104,14 +114,16 @@ void render(BelaContext* context, void* userData) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
             buf[channel][n] /= NUM_VOICES;
             buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
+            bufsnd[channel][n] = buf[channel][n];
         }
     }
 
     // send the audio out
     for (unsigned int channel = 0; channel < 2; channel++) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
-            float input = 0.0; // audioRead(context, n, 0);
-            audioWrite(context, n, channel, buf[channel][n] + input);
+            float input = audioRead(context, n, channel);
+            audioWrite(context, n, channel,
+                       buf[channel][n] + input * analogInput[channel]);
             analogWriteOnce(context, n, channel, bufsnd[channel][n]);
         }
     }
