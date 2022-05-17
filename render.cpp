@@ -55,8 +55,7 @@ bool setup(BelaContext* context, void* userData) {
         gAudioFramesPerAnalogFrame =
             context->audioFrames / context->analogFrames;
     for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
-        analogInputFilter[i] =
-            new I1P(1.0 / (context->audioSampleRate / context->audioFrames));
+        analogInputFilter[i] = new I1P(1.0 / context->analogSampleRate);
     }
 
     // setup audio things
