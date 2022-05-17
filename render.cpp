@@ -24,7 +24,9 @@ std::chrono::steady_clock::time_point timingEnd;
 float *buf[2], *bufsnd[2];
 
 // analog inputs
-float analogInput[8];
+static const int NUM_ANALOG_INPUTS = 5;
+float analogInput[NUM_ANALOG_INPUTS];
+I1P* analogInputFilter[NUM_ANALOG_INPUTS];
 
 static void loop(void*) {
     while (!Bela_stopRequested()) {
@@ -46,6 +48,12 @@ bool setup(BelaContext* context, void* userData) {
     // enable CPU monitoring for the whole audio thread
     Bela_cpuMonitoringInit(100);
     Bela_runAuxiliaryTask(loop);
+
+    // setup analog inputs
+    for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
+        analogInputFilter[i] =
+            new I1P(1.0 / (context->audioSampleRate / context->audioFrames));
+    }
 
     // setup audio things
     for (unsigned int channel = 0; channel < 2; channel++) {
@@ -73,7 +81,11 @@ void render(BelaContext* context, void* userData) {
     // cpu start clock
     Bela_cpuTic(&gCpuRender);
 
-    analogInput[0] = analogRead(context, 0, 0);
+    // read the analog pins
+    for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
+        analogInput[i] =
+            analogInputFilter[i]->process(analogRead(context, 0, i));
+    }
 
     // reset block
     for (unsigned int channel = 0; channel < 2; channel++) {
