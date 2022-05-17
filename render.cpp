@@ -23,12 +23,16 @@ std::chrono::steady_clock::time_point timingEnd;
 // audio buffer (2 x block)
 float *buf[2], *bufsnd[2];
 
+// analog inputs
+float analogInput[8];
+
 static void loop(void*) {
     while (!Bela_stopRequested()) {
         BelaCpuData* data = Bela_cpuMonitoringGet();
-        printf("total: %.2f%%, render: %.2f%%\n", data->percentage,
-               gCpuRender.percentage);
-        usleep(3000000);
+        // printf("total: %.2f%%, render: %.2f%%\n", data->percentage,
+        //       gCpuRender.percentage);
+        printf("analogInput[0]: %2.4f\n", analogInput[0]);
+        usleep(300000);
     }
 }
 
@@ -68,6 +72,8 @@ bool setup(BelaContext* context, void* userData) {
 void render(BelaContext* context, void* userData) {
     // cpu start clock
     Bela_cpuTic(&gCpuRender);
+
+    analogInput[0] = analogRead(context, 0, 0);
 
     // reset block
     for (unsigned int channel = 0; channel < 2; channel++) {
