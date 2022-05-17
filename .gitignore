@@ -1,5 +1,7 @@
 # Prerequisites
 *.d
+build/
+shisha
 
 # Compiled Object files
 *.slo
