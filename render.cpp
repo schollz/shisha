@@ -35,6 +35,7 @@ static void loop(void*) {
         // printf("total: %.2f%%, render: %.2f%%\n", data->percentage,
         //       gCpuRender.percentage);
         printf("analogInput[0]: %2.4f\n", analogInput[0]);
+        printf("analogInput[1]: %2.4f\n", analogInput[1]);
         usleep(300000);
     }
 }
@@ -89,8 +90,10 @@ void render(BelaContext* context, void* userData) {
         // read analog inputs and update frequency and amplitude
         if (gAudioFramesPerAnalogFrame && !(n % gAudioFramesPerAnalogFrame)) {
             for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
-                analogInput[i] = analogInputFilter[i]->process(
-                    analogRead(context, n / gAudioFramesPerAnalogFrame, i));
+                analogInput[i] =
+                    // analogInputFilter[i]->process(
+                    analogRead(context, n / gAudioFramesPerAnalogFrame, i);
+                //);
             }
         }
     }
@@ -111,7 +114,7 @@ void render(BelaContext* context, void* userData) {
     // dc blocking
     for (unsigned int channel = 0; channel < 2; channel++) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
-            buf[channel][n] /= NUM_VOICES;
+            buf[channel][n] /= NUM_VOICES * 4;
             buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
             bufsnd[channel][n] = buf[channel][n];
         }
@@ -120,14 +123,14 @@ void render(BelaContext* context, void* userData) {
     // send the audio out
     for (unsigned int channel = 0; channel < 2; channel++) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
-            float input = audioRead(context, n, channel);
+            float input = audioRead(context, n, channel) / 4.0;
             audioWrite(context, n, channel,
-                       buf[channel][n] +
+                       (1 - input) * buf[channel][n] +
                            input * analogInput[0]); // analogInput 0 is dry/wet
-            analogWriteOnce(
-                context, n, channel,
-                bufsnd[channel][n] +
-                    (input * analogInput[1])); // analogInput 1 is feedback
+            analogWriteOnce(context, n, channel,
+                            bufsnd[channel][n] +
+                                (input * analogInput[1] *
+                                 0.9)); // analogInput 1 is feedback
         }
     }
 
