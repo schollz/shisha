@@ -2,6 +2,7 @@
 #include "math.h"
 
 void Saw::setup(float fs) {
+    fs_ = fs;
     mul_ = 1.f / (float)M_PI;
     invSampleRate_ = 1.0 / fs;
     phase_ = M_PI;
@@ -13,6 +14,12 @@ void Saw::setup(float fs) {
         .peakGainDb = 2,
     };
     lpFilter.setup(settings);
+    // Set ADSR parameters
+    env_.setAttackRate(1 * fs);
+    env_.setDecayRate(8 * fs);
+    env_.setReleaseRate(1.0 * fs);
+    env_.setSustainLevel(0.01);
+    gate(true);
 }
 
 void Saw::process(int n, float* buf[2]) {

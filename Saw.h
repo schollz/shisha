@@ -1,5 +1,6 @@
 #include "Utils.h"
 #include <cstdlib>
+#include <libraries/ADSR/ADSR.h>
 #include <libraries/Biquad/Biquad.h>
 #include <math.h>
 
@@ -34,9 +35,21 @@ class Saw {
     void setMul(float mul) { mul_ = mul / M_PI; }
     float getPhase() { return phase_; }
     float getFrequency() { return frequency_; }
+    void attack(float val) { env_.setAttackRate(val * fs_); }
+    void decay(float val) { env_.setDecayRate(val * fs_); }
+    void release(float val) { env_.setReleaseRate(val * fs_); }
+    void sustain(float val) { env_.setSustain(val); }
+    void gate(bool val) {
+        env_.gate(val);
+        gate_ = gate;
+    }
+    void toggle() { gate(!gate_); }
 
   private:
+    ADSR env;
     Biquad lpFilter;
+    bool gate_;
+    float fs_;
     float detune_; // in cents
     float phase_, phaseinc_;
     float frequency_, note_;
