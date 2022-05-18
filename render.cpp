@@ -122,8 +122,12 @@ void render(BelaContext* context, void* userData) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
             float input = audioRead(context, n, channel);
             audioWrite(context, n, channel,
-                       buf[channel][n] + input * analogInput[channel]);
-            analogWriteOnce(context, n, channel, bufsnd[channel][n]);
+                       buf[channel][n] +
+                           input * analogInput[0]); // analogInput 0 is dry/wet
+            analogWriteOnce(
+                context, n, channel,
+                bufsnd[channel][n] +
+                    (input * analogInput[1])); // analogInput 1 is feedback
         }
     }
 
