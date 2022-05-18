@@ -1,4 +1,5 @@
 #include "I1P.h"
+#include "MonoFilePlayer.h"
 #include "Saw.h"
 #include "Utils.h"
 #include <Bela.h>
@@ -29,6 +30,10 @@ float analogInput[NUM_ANALOG_INPUTS];
 I1P* analogInputFilter[NUM_ANALOG_INPUTS];
 int gAudioFramesPerAnalogFrame = 0;
 
+// mono file player
+std::string gFilename = "drums.wav";
+MonoFilePlayer gPlayer;
+
 static void loop(void*) {
     while (!Bela_stopRequested()) {
         BelaCpuData* data = Bela_cpuMonitoringGet();
@@ -50,6 +55,15 @@ bool setup(BelaContext* context, void* userData) {
     // enable CPU monitoring for the whole audio thread
     Bela_cpuMonitoringInit(100);
     Bela_runAuxiliaryTask(loop);
+
+    // setup file player
+    if (!gPlayer.setup(gFilename)) {
+        rt_printf("Error loading audio file '%s'\n", gFilename.c_str());
+        return false;
+    }
+    rt_printf("Loaded the audio file '%s' with %d frames (%.1f seconds)\n",
+              gFilename.c_str(), gPlayer.size(),
+              gPlayer.size() / context->audioSampleRate);
 
     // setup analog inputs
     if (context->analogFrames)
@@ -112,9 +126,11 @@ void render(BelaContext* context, void* userData) {
     }
 
     // dc blocking
-    for (unsigned int channel = 0; channel < 2; channel++) {
-        for (unsigned int n = 0; n < context->audioFrames; n++) {
+    for (unsigned int n = 0; n < context->audioFrames; n++) {
+        float sample = 0.2 * gPlayer.process();
+        for (unsigned int channel = 0; channel < 2; channel++) {
             buf[channel][n] /= NUM_VOICES * 4;
+            buf[channel][n] = sample;
             buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
             bufsnd[channel][n] = buf[channel][n];
         }
