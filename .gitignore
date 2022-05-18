@@ -1,4 +1,5 @@
 # Prerequisites
+main*
 *.d
 build/
 shisha
