@@ -1,6 +1,7 @@
 #include "I1P.h"
 #include "MonoFilePlayer.h"
 #include "Saw.h"
+#include "Sequencer.h"
 #include "Utils.h"
 #include <Bela.h>
 #include <chrono>
@@ -33,6 +34,9 @@ int gAudioFramesPerAnalogFrame = 0;
 // mono file player
 std::string gFilename = "drums.wav";
 MonoFilePlayer gPlayer;
+
+// sequencer
+Sequencer sequence[NUM_VOICES];
 
 static void loop(void*) {
     while (!Bela_stopRequested()) {
@@ -80,6 +84,23 @@ bool setup(BelaContext* context, void* userData) {
         bufsnd[channel] = (float*)malloc(sizeof(float) * context->audioFrames);
     }
 
+    // setup sequencer
+    float bpm = 50;
+    std::vector<float> beats = {3.0, 5.0, 4.0, 6.0};
+    sequence[0] = Sequencer(bpm, context->audioFrames, context->audioSampleRate,
+                            beats, std::vector<float>{28, 28, 29, 26});
+    sequence[1] = Sequencer(bpm, context->audioFrames, context->audioSampleRate,
+                            beats, std::vector<float>{43, 48, 45, 50});
+    sequence[2] = Sequencer(bpm, context->audioFrames, context->audioSampleRate,
+                            beats, std::vector<float>{59, 57, 57, 59 - 12});
+    sequence[3] = Sequencer(bpm, context->audioFrames, context->audioSampleRate,
+                            beats, std::vector<float>{64, 69, 65, 59});
+    sequence[4] = Sequencer(bpm, context->audioFrames, context->audioSampleRate,
+                            beats, std::vector<float>{59, 52, 48, 55});
+    sequence[5] = Sequencer(bpm, context->audioFrames, context->audioSampleRate,
+                            beats, std::vector<float>{79, 72, 72, 71 - 12});
+
+    // setup oscillators
     std::vector<float> detuning_cents = {0.0,  -0.06, -0.1, -0.04,
                                          0.05, 0.02,  0.07};
     std::vector<float> notes = {45 - 12.0, 60, 64, 69, 74, 81};
@@ -98,6 +119,14 @@ bool setup(BelaContext* context, void* userData) {
 void render(BelaContext* context, void* userData) {
     // cpu start clock
     Bela_cpuTic(&gCpuRender);
+
+    // process sequencers
+    for (unsigned int i = 0; i < NUM_VOICES; i++) {
+        if (sequencer[i].tick() == true) {
+            rt_printf("%d[%2.1f] ", i, sequence[i].val());
+            voice[i].setNote(sequence[i].val());
+        }
+    }
 
     // process analog pins
     for (unsigned int n = 0; n < context->audioFrames; n++) {
