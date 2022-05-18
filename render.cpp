@@ -84,10 +84,10 @@ bool setup(BelaContext* context, void* userData) {
 
     // setup sequencer_notes
     float bpm = 50;
-    std::vector<float> beats = {3.0, 5.0, 4.0, 6.0};
+    std::vector<float> beats = {3.0, 5.0, 4.0, 3.0, 3.0};
     std::vector<std::vector<float>> notes = {
-        {28, 28, 29, 26}, {43, 48, 45, 50}, {59, 57, 57, 47},
-        {64, 69, 65, 59}, {59, 52, 48, 55}, {79, 72, 72, 71},
+        {28, 28, 29, 26, 26}, {43, 48, 45, 50, 50}, {59, 57, 57, 47, 48},
+        {64, 69, 65, 59, 64}, {59, 52, 48, 55, 52}, {79, 72, 72, 71, 79},
     };
     for (unsigned int i = 0; i < NUM_VOICES; i++) {
         sequencer_notes[i] =
@@ -140,6 +140,7 @@ void render(BelaContext* context, void* userData) {
         if (sequencer_notes[i].tick() == true) {
             rt_printf("%d[%2.1f] ", i, sequencer_notes[i].val());
             voice[i].setNote(sequencer_notes[i].val());
+            voice[i].toggle();
         }
     }
 

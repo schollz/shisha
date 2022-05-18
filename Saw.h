@@ -40,8 +40,8 @@ class Saw {
     void release(float val) { env_.setReleaseRate(val * fs_); }
     void sustain(float val) { env_.setSustain(val); }
     void gate(bool val) {
+        gate_ = val;
         env_.gate(val);
-        gate_ = gate;
     }
     void toggle() { gate(!gate_); }
 

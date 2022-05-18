@@ -19,7 +19,7 @@ void Saw::setup(float fs) {
     env_.setDecayRate(8 * fs);
     env_.setReleaseRate(1.0 * fs);
     env_.setSustainLevel(0.01);
-    gate(true);
+    gate_ = false;
 }
 
 void Saw::process(int n, float* buf[2]) {
@@ -34,5 +34,5 @@ float Saw::process() {
     phase_ += phaseinc_;
     if (phase_ >= M_PI)
         phase_ -= 2.0f * (float)M_PI;
-    return lpFilter.process(phase_ * mul_);
+    return lpFilter.process(phase_ * mul_) * env_.process();
 }
