@@ -17,6 +17,13 @@ class Sequencer {
         _bpm = bpm;
         _beat_inc = (_bpm / 60.0) * k / fs;
     };
+    void setDurVals(std::vector<float> durs, std::vector<float> vals) {
+        _vals = vals;
+        _durs = durs;
+        if (_i >= _durs.size()) {
+            _i = 0;
+        }
+    }
     bool tick() {
         float beats_old = beats_;
         beats_ += (bpm / 60) * context->audioFrames / context->audioSampleRate;
