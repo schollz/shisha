@@ -12,15 +12,13 @@
 BelaCpuData gCpuRender = {
     .count = 100,
 };
+std::chrono::steady_clock::time_point timingStart;
+std::chrono::steady_clock::time_point timingEnd;
 
 // oscillators
 static const int NUM_VOICES = 6;
 Saw voice[NUM_VOICES];
 I1P* dcBlock[2];
-
-// timing measurements
-std::chrono::steady_clock::time_point timingStart;
-std::chrono::steady_clock::time_point timingEnd;
 
 // audio buffer (2 x block)
 float *buf[2], *bufsnd[2];
@@ -74,7 +72,7 @@ bool setup(BelaContext* context, void* userData) {
         gAudioFramesPerAnalogFrame =
             context->audioFrames / context->analogFrames;
     for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
-        analogInputFilter[i] = new I1P(1.0 / context->analogSampleRate);
+        analogInputFilter[i] = new I1P(0.3 / context->analogSampleRate);
     }
 
     // setup audio things
