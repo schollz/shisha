@@ -130,7 +130,7 @@ void render(BelaContext* context, void* userData) {
         float sample = 0.2 * gPlayer.process();
         for (unsigned int channel = 0; channel < 2; channel++) {
             buf[channel][n] /= NUM_VOICES * 4;
-            buf[channel][n] = sample;
+            // buf[channel][n] = sample;
             buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
             bufsnd[channel][n] = buf[channel][n];
         }
@@ -139,7 +139,7 @@ void render(BelaContext* context, void* userData) {
     // send the audio out
     for (unsigned int channel = 0; channel < 2; channel++) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
-            float input = audioRead(context, n, channel) / 4.0;
+            float input = audioRead(context, n, channel) / 12.0;
             audioWrite(context, n, channel,
                        (1 - input) * buf[channel][n] +
                            input * analogInput[0]); // analogInput 0 is dry/wet
