@@ -15,10 +15,10 @@ void Saw::setup(float fs) {
     };
     lpFilter.setup(settings);
     // Set ADSR parameters
-    env_.setAttackRate(1 * fs);
-    env_.setDecayRate(8 * fs);
-    env_.setReleaseRate(1.0 * fs);
-    env_.setSustainLevel(0.01);
+    env_.setAttackRate(2.0 * fs);
+    env_.setDecayRate(60.0 * fs);
+    env_.setReleaseRate(60.0 * fs);
+    env_.setSustainLevel(0.5);
     gate_ = false;
 }
 

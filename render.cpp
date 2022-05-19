@@ -1,4 +1,5 @@
 #include "I1P.h"
+#include "LFNoise1.h"
 #include "MonoFilePlayer.h"
 #include "Saw.h"
 #include "Sequencer.h"
@@ -33,6 +34,8 @@ int gAudioFramesPerAnalogFrame = 0;
 std::string gFilename = "drums.wav";
 MonoFilePlayer gPlayer;
 
+// chorus
+LFNoise1 chorus_noise[2];
 // sequencers
 Sequencer sequencer_notes[NUM_VOICES];
 
@@ -80,11 +83,14 @@ bool setup(BelaContext* context, void* userData) {
         dcBlock[channel] = new I1P(10.0 / context->audioSampleRate);
         buf[channel] = (float*)malloc(sizeof(float) * context->audioFrames);
         bufsnd[channel] = (float*)malloc(sizeof(float) * context->audioFrames);
+        chorus_noise[channel] =
+            LFNoise1(randfloat(5.0, 10.0),
+                     context->audioSampleRate / context->audioFrames, true);
     }
 
     // setup sequencer_notes
-    float bpm = 50;
-    std::vector<float> beats = {3.0, 5.0, 4.0, 3.0, 3.0};
+    float bpm = 49.5;
+    std::vector<float> beats = {3.0, 5.0, 6.0, 3.0, 3.0};
     std::vector<std::vector<float>> notes = {
         {28, 28, 29, 26, 26}, {43, 48, 45, 50, 50}, {59, 57, 57, 47, 48},
         {64, 69, 65, 59, 64}, {59, 52, 48, 55, 52}, {79, 72, 72, 71, 79},
@@ -118,10 +124,8 @@ bool setup(BelaContext* context, void* userData) {
     // setup oscillators
     std::vector<float> detuning_cents = {0.0,  -0.06, -0.1, -0.04,
                                          0.05, 0.02,  0.07};
-    std::vector<float> notes = {45 - 12.0, 60, 64, 69, 74, 81};
     for (unsigned int i = 0; i < NUM_VOICES; i++) {
         voice[i] = Saw(context->audioSampleRate);
-        voice[i].setNote(notes[i]);
         voice[i].setDetune(detuning_cents[i]);
         voice[i].setPan(randfloat(-0.25, 0.25));
         voice[i].setLPF(80);
@@ -174,24 +178,25 @@ void render(BelaContext* context, void* userData) {
     for (unsigned int n = 0; n < context->audioFrames; n++) {
         float sample = 0.2 * gPlayer.process();
         for (unsigned int channel = 0; channel < 2; channel++) {
-            buf[channel][n] /= NUM_VOICES * 4;
-            // buf[channel][n] = sample;
+            buf[channel][n] /= NUM_VOICES;
+            // buf[channel][n] += sample;
             buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
-            bufsnd[channel][n] = buf[channel][n];
+            bufsnd[channel][n] = buf[channel][n] / 4;
         }
     }
 
+    analogWrite(context, 0, 2, map(chorus_noise[0].process(), -1, 1, 0, 1));
     // send the audio out
     for (unsigned int channel = 0; channel < 2; channel++) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
-            float input = audioRead(context, n, channel) / 12.0;
+            float input = audioRead(context, n, channel) / 2.0;
             audioWrite(context, n, channel,
-                       (1 - input) * buf[channel][n] +
+                       (1 - analogInput[0]) * buf[channel][n] +
                            input * analogInput[0]); // analogInput 0 is dry/wet
             analogWriteOnce(context, n, channel,
                             bufsnd[channel][n] +
-                                (input * analogInput[1] *
-                                 0.9)); // analogInput 1 is feedback
+                                (input * analogInput[1] * 0.9 /
+                                 5.0)); // analogInput 1 is feedback
         }
     }
 

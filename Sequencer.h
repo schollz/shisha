@@ -15,7 +15,7 @@ class Sequencer {
         _i = _durs.size() - 1;
         _dur = 10000.0;
         _bpm = bpm;
-        _beat_inc = (_bpm / 60.0) * k / fs;
+        _beat_inc = (_bpm / 60.0) * n / fs;
     };
     void setDurVals(std::vector<float> durs, std::vector<float> vals) {
         _vals = vals;
@@ -25,10 +25,10 @@ class Sequencer {
         }
     }
     bool tick() {
-        float beats_old = beats_;
-        beats_ += (bpm / 60) * context->audioFrames / context->audioSampleRate;
-        if (floor(beats) == floor(beats_old)) {
-            return false
+        float _beats_old = _beats;
+        _beats += _beat_inc;
+        if (floor(_beats) == floor(_beats_old)) {
+            return false;
         }
         _dur += 1.0;
         if (_dur < _durs.at(_i)) {
@@ -47,7 +47,7 @@ class Sequencer {
     unsigned int _i;
     float _dur;
     float _bpm;
-    float _bpm_inc, _beats;
+    float _beat_inc, _beats;
     std::vector<float> _durs;
     std::vector<float> _vals;
 };

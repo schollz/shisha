@@ -38,7 +38,7 @@ class Saw {
     void attack(float val) { env_.setAttackRate(val * fs_); }
     void decay(float val) { env_.setDecayRate(val * fs_); }
     void release(float val) { env_.setReleaseRate(val * fs_); }
-    void sustain(float val) { env_.setSustain(val); }
+    void sustain(float val) { env_.setSustainLevel(val); }
     void gate(bool val) {
         gate_ = val;
         env_.gate(val);
@@ -46,7 +46,7 @@ class Saw {
     void toggle() { gate(!gate_); }
 
   private:
-    ADSR env;
+    ADSR env_;
     Biquad lpFilter;
     bool gate_;
     float fs_;

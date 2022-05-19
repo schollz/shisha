@@ -1,5 +1,6 @@
 #include "I1P.h"
 #include "math.h"
+#include <cstdlib>
 #pragma once
 
 class LFNoise1 {
@@ -30,6 +31,7 @@ class LFNoise1 {
         }
         return current_;
     };
+    float val() { return current_; }
     inline float randfloat_(float a, float b) {
         return ((b - a) * ((float)rand() / RAND_MAX)) + a;
     }
