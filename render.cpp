@@ -44,8 +44,10 @@ static void loop(void*) {
         BelaCpuData* data = Bela_cpuMonitoringGet();
         // printf("total: %.2f%%, render: %.2f%%\n", data->percentage,
         //       gCpuRender.percentage);
-        printf("analogInput[0]: %2.4f\n", analogInput[0]);
-        printf("analogInput[1]: %2.4f\n", analogInput[1]);
+        for (unsigned int i = 0; i < 5; i++) {
+            printf("(%d %2.3f) ", i, analogInput[i]);
+        }
+        printf("\n");
         usleep(300000);
     }
 }
@@ -185,7 +187,12 @@ void render(BelaContext* context, void* userData) {
         }
     }
 
-    analogWrite(context, 0, 2, map(chorus_noise[0].process(), -1, 1, 0, 1));
+    for (unsigned int channel = 0; channel < 2; channel++) {
+        analogWrite(context, 0, 2 + channel,
+                    map(chorus_noise[channel].process(), -1, 1,
+                        0.5 - analogInput[1] / 20.0,
+                        0.5 + analogInput[1] / 20.0));
+    }
     // send the audio out
     for (unsigned int channel = 0; channel < 2; channel++) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
@@ -195,7 +202,7 @@ void render(BelaContext* context, void* userData) {
                            input * analogInput[0]); // analogInput 0 is dry/wet
             analogWriteOnce(context, n, channel,
                             bufsnd[channel][n] +
-                                (input * analogInput[1] * 0.9 /
+                                (input * analogInput[3] * 0.9 /
                                  5.0)); // analogInput 1 is feedback
         }
     }
