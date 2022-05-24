@@ -30,7 +30,11 @@ void Voices::note_on(float note, float velocity) {
     NoteEv old = NoteEv();
     old.event_num = 100000000;
     int i2 = -1;
+    float lowest_note = 10000.0;
     for (int i = 0; i < MAX_VOICES; i++) {
+        if (voice[i].playing() && ev[i].note < lowest_note) {
+            lowest_note = ev[i].note;
+        }
         if (ev[i].event_num < old.event_num && !voice[i].playing()) {
             old.event_num = ev[i].event_num;
             old.note = ev[i].note;
