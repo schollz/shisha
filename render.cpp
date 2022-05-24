@@ -38,13 +38,13 @@ LFNoise1 chorus_noise[2];
 static void loop(void*) {
     while (!Bela_stopRequested()) {
         BelaCpuData* data = Bela_cpuMonitoringGet();
-        // printf("total: %.2f%%, render: %.2f%%\n", data->percentage,
-        //       gCpuRender.percentage);
+        printf("total: %.2f%%, render: %.2f%%\n", data->percentage,
+               gCpuRender.percentage);
         for (unsigned int i = 0; i < 5; i++) {
-            printf("(%d %2.3f) ", i, analogInput[i]);
+            printf("%2.2f ", analogInput[i]);
         }
         printf("\n");
-        usleep(300000);
+        usleep(3000000);
     }
 }
 
@@ -92,6 +92,7 @@ bool setup(BelaContext* context, void* userData) {
 }
 
 void render(BelaContext* context, void* userData) {
+
     // cpu start clock
     Bela_cpuTic(&gCpuRender);
 
@@ -119,13 +120,12 @@ void render(BelaContext* context, void* userData) {
     // process audio
     voices.process(context->audioFrames, buf);
 
-    // dc blocking
     for (unsigned int n = 0; n < context->audioFrames; n++) {
-        float sample = 0.2 * gPlayer.process();
+        // float sample = 0.2 * gPlayer.process();
         for (unsigned int channel = 0; channel < 2; channel++) {
-            buf[channel][n] /= NUM_VOICES;
+            buf[channel][n] /= 12.0;
             // buf[channel][n] += sample;
-            buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
+            // buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
             bufsnd[channel][n] = buf[channel][n] / 4;
         }
     }
@@ -140,13 +140,16 @@ void render(BelaContext* context, void* userData) {
     for (unsigned int channel = 0; channel < 2; channel++) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
             float input = audioRead(context, n, channel) / 2.0;
-            audioWrite(context, n, channel,
-                       (1 - analogInput[0]) * buf[channel][n] +
-                           input * analogInput[0]); // analogInput 0 is dry/wet
-            analogWriteOnce(context, n, channel,
-                            bufsnd[channel][n] +
-                                (input * analogInput[3] * 0.9 /
-                                 5.0)); // analogInput 1 is feedback
+            audioWrite(context, n, channel, buf[channel][n]);
+            /*
+                                   (1 - analogInput[0]) * buf[channel][n] +
+                                       input * analogInput[0]); // analogInput 0
+               is dry/wet
+            */
+            // analogWriteOnce(context, n, channel,
+            //                bufsnd[channel][n] +
+            //                    (input * analogInput[3] * 0.9 /
+            //                    5.0)); // analogInput 1 is feedback
         }
     }
 

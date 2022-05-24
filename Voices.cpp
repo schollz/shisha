@@ -1,13 +1,19 @@
 #include "Voices.h"
+#include <libraries/Midi/Midi.h>
 #include <vector>
 
+Midi midi;
+
+const char* gMidiPort0 = "hw:1,0,0";
+
 void Voices::setup(float fs) {
-    midi.readFrom(midi_port);
-    midi.writeTo(midi_port);
+    midi.readFrom(gMidiPort0);
+    // midi.writeTo(midi_port);
     midi.enableParser(true);
 
-    std::vector<float> detuning_cents = {0.0,  -0.06, -0.1, -0.04,
-                                         0.05, 0.02,  0.07};
+    std::vector<float> detuning_cents = {0.0,   -0.06, -0.1,  -0.04, 0.05, 0.02,
+                                         0.07,  -0.08, -0.1,  0.02,  0.09, 0.11,
+                                         -0.03, -0.05, -0.12, 0.03};
 
     for (unsigned int i = 0; i < MAX_VOICES; i++) {
         voice[i] = Saw(fs);
@@ -32,6 +38,7 @@ void Voices::note_on(float note, float velocity) {
         }
     }
     if (i2 == -1) {
+        i2 = 0;
         for (int i = 0; i < MAX_VOICES; i++) {
             if (ev[i].event_num < old.event_num) {
                 old.event_num = ev[i].event_num;
@@ -49,8 +56,8 @@ void Voices::note_on(float note, float velocity) {
 
     // update the events
     event_num++;
-    ev[i].note = note;
-    ev[i].event_num = event_num;
+    ev[i2].note = note;
+    ev[i2].event_num = event_num;
 }
 
 void Voices::note_off(float note) {
@@ -61,7 +68,7 @@ void Voices::note_off(float note) {
     }
 }
 
-void Voices::process(int n float* buf[2]) {
+void Voices::process(int n, float* buf[2]) {
     int num;
     while ((num = midi.getParser()->numAvailableMessages()) > 0) {
         static MidiChannelMessage message;
@@ -70,13 +77,12 @@ void Voices::process(int n float* buf[2]) {
         if (message.getType() == kmmNoteOn) {
             float note = (float)message.getDataByte(0);
             float velocity = (float)message.getDataByte(1);
-            if (velocity > 0) {
-                rt_printf("note_on: %2.0f %2.0f", note, velocity);
-                note_on(note, velocity);
-            } else {
-                rt_printf("note_off: %2.0f %2.0f", note, velocity);
-                note_off(note);
-            }
+            rt_printf("note_on: %2.0f %2.0f\n", note, velocity);
+            note_on(note, velocity);
+        } else if (message.getType() == kmmNoteOff) {
+            float note = (float)message.getDataByte(0);
+            rt_printf("note_off: %2.0f\n", note);
+            note_off(note);
         }
     }
 

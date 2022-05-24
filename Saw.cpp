@@ -15,10 +15,10 @@ void Saw::setup(float fs) {
     };
     lpFilter.setup(settings);
     // Set ADSR parameters
-    env_.setAttackRate(2.0 * fs);
-    env_.setDecayRate(60.0 * fs);
-    env_.setReleaseRate(60.0 * fs);
-    env_.setSustainLevel(0.5);
+    env_.setAttackRate(randfloat(0.5, 1.0) * fs);
+    env_.setDecayRate(randfloat(1.0, 2.0) * fs);
+    env_.setReleaseRate(randfloat(2, 4) * fs);
+    env_.setSustainLevel(randfloat(0.5, 0.6));
     gate_ = false;
 }
 
@@ -32,11 +32,11 @@ void Saw::process(int n, float* buf[2]) {
 
 float Saw::process() {
     float env_current = env_.process();
-    if (env_current < 0.0001) {
-        return 0.0;
-    }
+    // if (env_current < 0.0001) {
+    //    return 0.0;
+    //}
     phase_ += phaseinc_;
-    if (phase_ >= M_PI)
+    while (phase_ >= M_PI)
         phase_ -= 2.0f * (float)M_PI;
     return lpFilter.process(phase_ * mul_) * env_current;
 }

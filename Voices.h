@@ -1,3 +1,4 @@
+#include "Saw.h"
 #include "Utils.h"
 #include <cstdlib>
 #include <libraries/ADSR/ADSR.h>
@@ -5,7 +6,7 @@
 #include <math.h>
 
 #pragma once
-#define MAX_VOICES 6
+#define MAX_VOICES 12
 
 class NoteEv {
   public:
@@ -15,7 +16,7 @@ class NoteEv {
     float note;
 
   private:
-}
+};
 
 class Voices {
   public:
@@ -23,9 +24,8 @@ class Voices {
     Voices(int num_voices) { setup(num_voices); }
     ~Voices(){};
 
-    void setup(int num_voices);
+    void setup(float fs);
 
-    float process();
     void process(int n, float* buf[2]);
     void setDetune(int i, float detune) { voice[i].setDetune(detune); }
     void setPan(int i, float pan) { voice[i].setPan(pan); }
@@ -55,12 +55,10 @@ class Voices {
         }
     }
     int oldest();
-    void note_on(float note);
+    void note_on(float note, float velocity);
     void note_off(float note);
 
   private:
-    Midi midi;
-    const char* midi_port = "hw:1,0,0";
     Saw voice[MAX_VOICES];
     NoteEv ev[MAX_VOICES];
     int event_num;
