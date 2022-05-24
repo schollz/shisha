@@ -71,8 +71,10 @@ void Voices::process(int n float* buf[2]) {
             float note = (float)message.getDataByte(0);
             float velocity = (float)message.getDataByte(1);
             if (velocity > 0) {
+                rt_printf("note_on: %2.0f %2.0f", note, velocity);
                 note_on(note, velocity);
             } else {
+                rt_printf("note_off: %2.0f %2.0f", note, velocity);
                 note_off(note);
             }
         }

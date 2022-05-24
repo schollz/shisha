@@ -55,8 +55,8 @@ class Voices {
         }
     }
     int oldest();
-    void note_on(int note);
-    void note_off(int note);
+    void note_on(float note);
+    void note_off(float note);
 
   private:
     Midi midi;

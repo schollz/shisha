@@ -31,8 +31,12 @@ void Saw::process(int n, float* buf[2]) {
 }
 
 float Saw::process() {
+    float env_current = env_.process();
+    if (env_current < 0.0001) {
+        return 0.0;
+    }
     phase_ += phaseinc_;
     if (phase_ >= M_PI)
         phase_ -= 2.0f * (float)M_PI;
-    return lpFilter.process(phase_ * mul_) * env_.process();
+    return lpFilter.process(phase_ * mul_) * env_current;
 }
