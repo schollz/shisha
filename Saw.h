@@ -42,8 +42,10 @@ class Saw {
     void gate(bool val) {
         gate_ = val;
         env_.gate(val);
+        env_.process();
     }
     void toggle() { gate(!gate_); }
+    bool playing() { return gate_; }
 
   private:
     ADSR env_;
