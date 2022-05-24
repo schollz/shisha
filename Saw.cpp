@@ -32,11 +32,12 @@ void Saw::process(int n, float* buf[2]) {
 
 float Saw::process() {
     float env_current = env_.process();
-    // if (env_current < 0.0001) {
-    //    return 0.0;
-    //}
+    if (env_current < 0.0000001) {
+        return 0.0;
+    }
     phase_ += phaseinc_;
-    while (phase_ >= M_PI)
+    while (phase_ >=
+           M_PI) // TODO: reduce this by env_current to avoid aliasing?
         phase_ -= 2.0f * (float)M_PI;
     return lpFilter.process(phase_ * mul_) * env_current;
 }

@@ -89,4 +89,8 @@ void Voices::process(int n, float* buf[2]) {
     for (unsigned int i = 0; i < MAX_VOICES; i++) {
         voice[i].process(n, buf);
     }
+
+    // TODO put a LPF over a "main envelope" that is always on as long as a note
+    // is on (to improve aliasing)
+    // TODO put a LPF on each voice with the envelope? (to improve aliasing)
 }
