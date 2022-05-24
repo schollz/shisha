@@ -54,7 +54,14 @@ void Voices::note_on(float note, float velocity) {
 
     // update the voice
     voice[i2].gate(false);
-    voice[i2].setNote(note);
+    // if lowest note, make it a sub note
+    if (note < lowest_note) {
+        voice[i2].setMul(-1.0);
+        voice[i2].setNote(note - 12);
+    } else {
+        voice[i2].setMul(1.0);
+        voice[i2].setNote(note);
+    }
     voice[i2].gate(true);
     voice[i2].sustain(0.5); // todo: replace by the velocity
 
