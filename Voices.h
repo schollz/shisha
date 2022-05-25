@@ -62,4 +62,7 @@ class Voices {
     Saw voice[MAX_VOICES];
     NoteEv ev[MAX_VOICES];
     int event_num;
+    ADSR env[2];
+    Biquad filter[2];
+    bool is_playing;
 };

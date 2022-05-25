@@ -11,6 +11,23 @@ void Voices::setup(float fs) {
     // midi.writeTo(midi_port);
     midi.enableParser(true);
 
+    // setup overall filter
+    Biquad::Settings settings{
+        .fs = fs,
+        .cutoff = 15000.0,
+        .type = Biquad::lowpass,
+        .q = 0.707,
+        .peakGainDb = 3,
+    };
+    for (unsigned int channel = 0; channel < 2; channel++) {
+        filter[channel].setup(settings);
+        env[channel].setAttackRate(0.1 * fs);
+        env[channel].setDecayRate(120 * fs);
+        env[channel].setReleaseRate(8 * fs);
+        env[channel].setSustainLevel(0.95);
+        env[channel].gate(false);
+    }
+
     std::vector<float> detuning_cents = {0.0,   -0.06, -0.1,  -0.04, 0.05, 0.02,
                                          0.07,  -0.08, -0.1,  0.02,  0.09, 0.11,
                                          -0.03, -0.05, -0.12, 0.03};
@@ -52,6 +69,13 @@ void Voices::note_on(float note, float velocity) {
         }
     }
 
+    if (is_playing == false) {
+        // gate on the main envelope
+        env[0].gate(true);
+        env[1].gate(true);
+        is_playing = true;
+    }
+
     // update the voice
     voice[i2].gate(false);
     // if lowest note, make it a sub note
@@ -77,6 +101,18 @@ void Voices::note_off(float note) {
             voice[i].gate(false);
         }
     }
+    // if nothing else is playing then turn down filter
+    is_playing = false;
+    for (int i = 0; i < MAX_VOICES; i++) {
+        if (voice[i].playing() == true) {
+            is_playing = true;
+            break;
+        }
+    }
+    if (is_playing == false) {
+        env[0].gate(false);
+        env[1].gate(false);
+    }
 }
 
 void Voices::process(int n, float* buf[2]) {
@@ -99,6 +135,18 @@ void Voices::process(int n, float* buf[2]) {
 
     for (unsigned int i = 0; i < MAX_VOICES; i++) {
         voice[i].process(n, buf);
+    }
+
+    // update the filter and filter the output
+    for (unsigned int channel = 0; channel < 2; channel++) {
+        for (unsigned int i = 0; i < n - 1; i++) {
+            env[channel].process();
+        }
+        filter[channel].setFc(
+            linexp(env[channel].process(), 0.0, 1.0, 10.0, 18000.0));
+        for (unsigned int i = 0; i < n; i++) {
+            buf[channel][i] = filter[channel].process(buf[channel][i]);
+        }
     }
 
     // TODO put a LPF over a "main envelope" that is always on as long as a note
