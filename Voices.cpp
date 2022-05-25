@@ -23,7 +23,7 @@ void Voices::setup(float fs) {
         filter[channel].setup(settings);
         env[channel].setAttackRate(0.1 * fs);
         env[channel].setDecayRate(120 * fs);
-        env[channel].setReleaseRate(8 * fs);
+        env[channel].setReleaseRate(16 * fs);
         env[channel].setSustainLevel(0.95);
         env[channel].gate(false);
     }
@@ -37,6 +37,7 @@ void Voices::setup(float fs) {
         voice[i].setDetune(detuning_cents[i]);
         voice[i].setPan(randfloat(-0.25, 0.25));
         voice[i].setLPF(80);
+        voice[i].release(8);
         ev[i] = NoteEv();
     }
 }
@@ -80,14 +81,15 @@ void Voices::note_on(float note, float velocity) {
     voice[i2].gate(false);
     // if lowest note, make it a sub note
     if (note < lowest_note) {
-        voice[i2].setMul(-1.0);
+        // voice[i2].setMul(-1.0);
         voice[i2].setNote(note - 12);
     } else {
-        voice[i2].setMul(1.0);
+        // voice[i2].setMul(1.0);
         voice[i2].setNote(note);
     }
     voice[i2].gate(true);
-    voice[i2].sustain(0.5); // todo: replace by the velocity
+    voice[i2].sustain(
+        linlin(velocity, 0, 127, 0.4, 0.8)); // todo: replace by the velocity
 
     // update the events
     event_num++;

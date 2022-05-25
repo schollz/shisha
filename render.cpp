@@ -73,7 +73,7 @@ bool setup(BelaContext* context, void* userData) {
         gAudioFramesPerAnalogFrame =
             context->audioFrames / context->analogFrames;
     for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
-        analogInputFilter[i] = new I1P(0.3 / context->analogSampleRate);
+        analogInputFilter[i] = new I1P(0.05 / context->analogSampleRate);
     }
 
     // setup audio things
@@ -101,10 +101,8 @@ void render(BelaContext* context, void* userData) {
         // read analog inputs and update frequency and amplitude
         if (gAudioFramesPerAnalogFrame && !(n % gAudioFramesPerAnalogFrame)) {
             for (unsigned int i = 0; i < NUM_ANALOG_INPUTS; i++) {
-                analogInput[i] =
-                    // analogInputFilter[i]->process(
-                    analogRead(context, n / gAudioFramesPerAnalogFrame, i);
-                //);
+                analogInput[i] = analogInputFilter[i]->process(
+                    analogRead(context, n / gAudioFramesPerAnalogFrame, i));
             }
         }
     }
@@ -125,31 +123,31 @@ void render(BelaContext* context, void* userData) {
         for (unsigned int channel = 0; channel < 2; channel++) {
             buf[channel][n] /= 12.0;
             // buf[channel][n] += sample;
-            // buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
+            buf[channel][n] -= dcBlock[channel]->process(buf[channel][n]);
             bufsnd[channel][n] = buf[channel][n] / 4;
         }
     }
 
     for (unsigned int channel = 0; channel < 2; channel++) {
-        analogWrite(context, 0, 2 + channel,
-                    map(chorus_noise[channel].process(), -1, 1,
-                        0.5 - analogInput[1] / 20.0,
-                        0.5 + analogInput[1] / 20.0));
+        float val =
+            map(chorus_noise[channel].process(), -1, 1,
+                0.5 - analogInput[1] / 25.0, 0.5 + analogInput[1] / 25.0);
+        val += analogInput[2] - 0.5;
+        val = clamp(val, 0, 1);
+        analogWrite(context, 0, 2 + channel, val);
     }
     // send the audio out
     for (unsigned int channel = 0; channel < 2; channel++) {
         for (unsigned int n = 0; n < context->audioFrames; n++) {
             float input = audioRead(context, n, channel) / 2.0;
-            audioWrite(context, n, channel, buf[channel][n]);
-            /*
-                                   (1 - analogInput[0]) * buf[channel][n] +
-                                       input * analogInput[0]); // analogInput 0
-               is dry/wet
-            */
-            // analogWriteOnce(context, n, channel,
-            //                bufsnd[channel][n] +
-            //                    (input * analogInput[3] * 0.9 /
-            //                    5.0)); // analogInput 1 is feedback
+            audioWrite(context, n, channel,
+                       (1 - analogInput[0]) * buf[channel][n] +
+                           input * analogInput[0]); // analogInput 0
+
+            analogWriteOnce(context, n, channel,
+                            bufsnd[channel][n] +
+                                (input * analogInput[3] * 0.9 /
+                                 5.0)); // analogInput 1 is feedback
         }
     }
 
